@@ -826,7 +826,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1669,7 +1669,7 @@ dependencies = [
 [[package]]
 name = "juiz_broker_suite"
 version = "0.0.0"
-source = "git+https://github.com/OpenJUIZ/juiz?rev=e905ab53e5fb7e97d05206a65fa4d1cfafceff80#e905ab53e5fb7e97d05206a65fa4d1cfafceff80"
+source = "git+https://github.com/OpenJUIZ/juiz?rev=1783c68b6e45ae966b8d8a5502c5711a084d9bba#1783c68b6e45ae966b8d8a5502c5711a084d9bba"
 dependencies = [
  "juiz_core",
  "juiz_sdk",
@@ -1680,7 +1680,7 @@ dependencies = [
 [[package]]
 name = "juiz_core"
 version = "0.3.7"
-source = "git+https://github.com/OpenJUIZ/juiz?rev=e905ab53e5fb7e97d05206a65fa4d1cfafceff80#e905ab53e5fb7e97d05206a65fa4d1cfafceff80"
+source = "git+https://github.com/OpenJUIZ/juiz?rev=1783c68b6e45ae966b8d8a5502c5711a084d9bba#1783c68b6e45ae966b8d8a5502c5711a084d9bba"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -1712,7 +1712,7 @@ dependencies = [
 [[package]]
 name = "juiz_idl"
 version = "0.3.7"
-source = "git+https://github.com/OpenJUIZ/juiz?rev=e905ab53e5fb7e97d05206a65fa4d1cfafceff80#e905ab53e5fb7e97d05206a65fa4d1cfafceff80"
+source = "git+https://github.com/OpenJUIZ/juiz?rev=1783c68b6e45ae966b8d8a5502c5711a084d9bba#1783c68b6e45ae966b8d8a5502c5711a084d9bba"
 dependencies = [
  "base64 0.22.1",
  "clap",
@@ -1725,7 +1725,7 @@ dependencies = [
 [[package]]
 name = "juiz_macro"
 version = "0.3.7"
-source = "git+https://github.com/OpenJUIZ/juiz?rev=e905ab53e5fb7e97d05206a65fa4d1cfafceff80#e905ab53e5fb7e97d05206a65fa4d1cfafceff80"
+source = "git+https://github.com/OpenJUIZ/juiz?rev=1783c68b6e45ae966b8d8a5502c5711a084d9bba#1783c68b6e45ae966b8d8a5502c5711a084d9bba"
 dependencies = [
  "anyhow",
  "litrs",
@@ -1738,7 +1738,7 @@ dependencies = [
 [[package]]
 name = "juiz_sdk"
 version = "0.3.7"
-source = "git+https://github.com/OpenJUIZ/juiz?rev=e905ab53e5fb7e97d05206a65fa4d1cfafceff80#e905ab53e5fb7e97d05206a65fa4d1cfafceff80"
+source = "git+https://github.com/OpenJUIZ/juiz?rev=1783c68b6e45ae966b8d8a5502c5711a084d9bba#1783c68b6e45ae966b8d8a5502c5711a084d9bba"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1758,7 +1758,7 @@ dependencies = [
 [[package]]
 name = "juiz_std_types"
 version = "0.3.7"
-source = "git+https://github.com/OpenJUIZ/juiz?rev=e905ab53e5fb7e97d05206a65fa4d1cfafceff80#e905ab53e5fb7e97d05206a65fa4d1cfafceff80"
+source = "git+https://github.com/OpenJUIZ/juiz?rev=1783c68b6e45ae966b8d8a5502c5711a084d9bba#1783c68b6e45ae966b8d8a5502c5711a084d9bba"
 dependencies = [
  "juiz_idl",
  "juiz_sdk",
@@ -1767,7 +1767,7 @@ dependencies = [
 [[package]]
 name = "juiz_types"
 version = "0.3.7"
-source = "git+https://github.com/OpenJUIZ/juiz?rev=e905ab53e5fb7e97d05206a65fa4d1cfafceff80#e905ab53e5fb7e97d05206a65fa4d1cfafceff80"
+source = "git+https://github.com/OpenJUIZ/juiz?rev=1783c68b6e45ae966b8d8a5502c5711a084d9bba#1783c68b6e45ae966b8d8a5502c5711a084d9bba"
 dependencies = [
  "base64 0.22.1",
  "regex",
@@ -1780,7 +1780,7 @@ dependencies = [
 [[package]]
 name = "juiz_webui"
 version = "0.3.7"
-source = "git+https://github.com/OpenJUIZ/juiz?rev=e905ab53e5fb7e97d05206a65fa4d1cfafceff80#e905ab53e5fb7e97d05206a65fa4d1cfafceff80"
+source = "git+https://github.com/OpenJUIZ/juiz?rev=1783c68b6e45ae966b8d8a5502c5711a084d9bba#1783c68b6e45ae966b8d8a5502c5711a084d9bba"
 dependencies = [
  "rust-embed",
 ]
@@ -2583,7 +2583,7 @@ dependencies = [
  "quinn-udp",
  "rustc-hash",
  "rustls",
- "socket2 0.6.5",
+ "socket2 0.5.10",
  "thiserror 2.0.21",
  "tokio",
  "tracing",
@@ -2621,9 +2621,9 @@ dependencies = [
  "cfg_aliases 0.2.2",
  "libc",
  "once_cell",
- "socket2 0.6.5",
+ "socket2 0.5.10",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4326,7 +4326,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

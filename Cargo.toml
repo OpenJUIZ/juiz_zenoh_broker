@@ -31,7 +31,7 @@ shared-memory = ["zenoh/shared-memory", "zenoh/unstable"]
 # C ABI のブローカーは juiz_sdk のグルーだけで作る。juiz_core には依存しない (broker-plugin-abi.md §2 の 4)。
 # juiz の rev はテストが使う juiz_core・juiz_broker_suite と同じにする (同じ juiz_sdk を 1 つだけ使うため)。
 # rev を変えるときは juiz-rev.txt も変える (CI はその rev の juiz をビルドしてテストの相手にする)
-juiz_sdk = { git = "https://github.com/OpenJUIZ/juiz", rev = "e905ab53e5fb7e97d05206a65fa4d1cfafceff80" }
+juiz_sdk = { git = "https://github.com/OpenJUIZ/juiz", rev = "1783c68b6e45ae966b8d8a5502c5711a084d9bba" }
 serde_json = "1"
 # TCP だけ。ほかの transport は入れない (zenoh-broker.md §2)。共有メモリは feature shared-memory
 zenoh = { version = "1.10.2", default-features = false, features = ["transport_tcp"] }
@@ -42,10 +42,10 @@ libc = "0.2"
 
 [dev-dependencies]
 # テストだけ。プラグイン自身は juiz_core を使わない
-juiz_core = { git = "https://github.com/OpenJUIZ/juiz", rev = "e905ab53e5fb7e97d05206a65fa4d1cfafceff80" }
+juiz_core = { git = "https://github.com/OpenJUIZ/juiz", rev = "1783c68b6e45ae966b8d8a5502c5711a084d9bba" }
 # どのブローカーでも成り立つ確認 (juiz の brokers/broker_suite、crates.io には無い)。
 # 例のプラグインと juiz コマンドの置き場所は環境変数 JUIZ_BROKER_SUITE_TARGET_DIR で渡す (scripts/test.sh)
-juiz_broker_suite = { git = "https://github.com/OpenJUIZ/juiz", rev = "e905ab53e5fb7e97d05206a65fa4d1cfafceff80" }
+juiz_broker_suite = { git = "https://github.com/OpenJUIZ/juiz", rev = "1783c68b6e45ae966b8d8a5502c5711a084d9bba" }
 uuid = { version = "1", features = ["v4"] }
 # HTTP で受けた要求を zenoh の副系へ転送するテスト (tests/broker/error_handling.rs)
 reqwest = { version = "0.12.8", default-features = false, features = ["blocking", "json", "rustls-tls-native-roots"] }
