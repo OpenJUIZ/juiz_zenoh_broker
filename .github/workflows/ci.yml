@@ -1,0 +1,56 @@
+name: CI
+
+# ビルドとテスト(Linux)。テストの相手の juiz コマンドと例のプラグインは juiz-rev.txt の rev の juiz からビルドする
+# (scripts/test.sh)。OS ごとのアーカイブを作って入れる確かめは release.yml(PR でも scripts/ などを変えたときに走る)。
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Build & test (Linux)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # juiz コマンドが既定の feature(embed-python)で libpython にリンクするので setup-python する
+      - uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: "3.14"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # pyo3 のビルド結果に Python のパスが入るので、パッチ版までキーに入れる
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: test-python${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('juiz-rev.txt') }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      # Zenoh は共有メモリの pool 全体を mlock する。ランナーの一般ユーザーの RLIMIT_MEMLOCK (8 MiB) では
+      # pool (既定 64 MiB) を作れず TCP に戻るので、共有メモリの経路も確かめるために上限を外す (zenoh-broker.md §11.3)
+      - name: Build & test
+        run: |
+          sudo prlimit --pid $$ --memlock=unlimited:unlimited
+          ulimit -l
+          scripts/test.sh --verbose
+
+      # 共有メモリなし (TCP だけ) でもビルドできる
+      - name: Build without shared memory
+        run: cargo build --no-default-features --features plugin
+
+      # 配るのと同じ形 (release ビルド → アーカイブ) で、juiz broker install から使えることを確かめる
+      - name: Package & install
+        run: |
+          cargo build --release
+          archive=$(scripts/package.sh x86_64-unknown-linux-gnu dist)
+          scripts/check-install.sh "$archive" target/debug

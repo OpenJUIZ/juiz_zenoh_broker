@@ -1,0 +1,149 @@
+name: Release
+
+# プラグインを OS・CPU ごとのアーカイブ juiz_broker-zenoh-<版>-abi<N>-<ターゲット>.tar.gz(Windows は .zip)と
+# .sha256 にして GitHub Releases の v<版> に置く(OpenJUIZ/juiz の docs/spec/broker-plugin-abi.md §10.2)。
+# juiz broker install zenoh はここから取る。
+#
+# - v* タグ: タグの版と Cargo.toml の version が一致するときだけ、タグのリリースに置く
+#   (リリースが無ければ作る。リリース作成画面で先に作ったときは、そのリリースに足す)
+# - プルリクエスト(このファイル・scripts/ を変えたとき)・手動実行: アーカイブを作って確かめるだけ(アーティファクトに置く)
+#
+# どのアーカイブも、juiz-rev.txt の rev の juiz で juiz broker install --from して、conf に type_name: zenoh を
+# 書いた juiz と juiz -s zenoh://… で Process を呼べることを確かめる(scripts/check-install.sh)。
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - ".github/workflows/release.yml"
+      - "scripts/**"
+      - "Cargo.toml"
+      - "juiz-rev.txt"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check-version:
+    name: Check tag and version
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare tag with Cargo.toml version
+        if: github.ref_type == 'tag'
+        run: |
+          expected="${GITHUB_REF_NAME#v}"
+          ver=$(sed -n 's/^version *= *"\(.*\)"/\1/p' Cargo.toml | head -n 1)
+          echo "Cargo.toml: $ver, tag: $expected"
+          if [ "$ver" != "$expected" ]; then
+            echo "::error::Cargo.toml のバージョン $ver がタグのバージョン $expected と一致しません"
+            exit 1
+          fi
+
+  build:
+    name: Archive (${{ matrix.target }})
+    needs: check-version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 古い glibc の Linux でも動くよう、Linux は 22.04 でビルドする
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-22.04
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-22.04-arm
+          - target: aarch64-apple-darwin
+            runner: macos-15
+          - target: x86_64-apple-darwin
+            runner: macos-15-intel
+          - target: x86_64-pc-windows-msvc
+            runner: windows-2022
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        # Windows も Git Bash で同じスクリプトを使う
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      # 確かめに使う juiz コマンドが既定の feature(embed-python)で libpython にリンクするので setup-python する
+      - uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: "3.14"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # タグや PR の枝に保存したキャッシュは他の枝から読めないので保存しない。main のキャッシュは読める
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-${{ matrix.target }}-python${{ steps.setup-python.outputs.python-version }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build the plugin
+        run: cargo build --release
+
+      - name: Package
+        run: |
+          archive=$(scripts/package.sh "${{ matrix.target }}" dist)
+          echo "ARCHIVE=$archive" >> "$GITHUB_ENV"
+          ls -l dist
+          cat dist/*.sha256
+          case "$archive" in
+            *.zip) python -m zipfile -l "$archive" ;;
+            *) tar -tzvf "$archive" ;;
+          esac
+
+      - name: Build juiz to check the archive
+        run: scripts/build-juiz.sh
+
+      - name: Install the archive with juiz broker install and use it
+        run: scripts/check-install.sh "$ARCHIVE" target/debug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: juiz-zenoh-broker-${{ matrix.target }}
+          path: dist/
+
+  release:
+    name: Upload to the GitHub release
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: juiz-zenoh-broker-*
+          merge-multiple: true
+          path: dist/
+
+      # 古い系列の版を後から出したときに、それが「Latest」のリリースにならないよう、
+      # v*.*.* のタグの中で一番新しい版のときだけ Latest にする
+      - name: Decide whether this release is the latest
+        id: latest
+        run: |
+          newest=$(git ls-remote --tags --refs "https://github.com/${GITHUB_REPOSITORY}.git" 'v*' \
+            | sed -n 's|.*refs/tags/\(v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)$|\1|p' \
+            | sort -V | tail -n 1)
+          echo "this tag: $GITHUB_REF_NAME, newest tag: $newest"
+          if [ "$newest" = "$GITHUB_REF_NAME" ]; then
+            echo "make_latest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "make_latest=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          make_latest: ${{ steps.latest.outputs.make_latest }}
+          # リリース作成画面で書いた説明やタイトルは変えない
+          append_body: false
+          fail_on_unmatched_files: true
