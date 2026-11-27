@@ -1,0 +1,58 @@
+[package]
+name = "juiz_zenoh_broker"
+# この版は juiz の版とそろえない。juiz と合わせるのはブローカーの ABI の版だけ
+# (docs/spec/broker-plugin-abi.md §9、OpenJUIZ/juiz#634)。v<版> のタグで公開する (.github/workflows/release.yml)
+version = "0.4.0"
+edition = "2021"
+rust-version = "1.89"
+description = "Zenoh broker plugin for JUIZ (broker C ABI)."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/OpenJUIZ/juiz_zenoh_broker"
+# crates.io には出さない。配るのは GitHub Releases の OS ごとのアーカイブだけ (juiz broker install zenoh で入れる)
+publish = false
+
+[lib]
+# ファイル名は libjuiz_zenoh_broker.so (macOS は .dylib、Windows は juiz_zenoh_broker.dll)。
+# docs/spec/broker-plugin-abi.md §10.1 の置き場所の並びに合わせる
+name = "juiz_zenoh_broker"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["plugin", "shared-memory"]
+# プラグインとしての入口 (C ABI の broker_factory_cabi、#[no_mangle]、broker-plugin-abi.md §3.1) を置く。
+# 自分で System を作るアプリに組み込むときは、これを切って broker_entry を register_builtin_cabi_broker に渡す。
+# ほかのブローカーも同じ名前の入口を持つので、両方を 1 つのバイナリに入れるとリンクでぶつかるため
+plugin = []
+# 同じホストの相手へは Zenoh の共有メモリでフレームを送る (docs/spec/zenoh-broker.md §11)。
+# Zenoh の共有メモリの API は unstable なので、Zenoh の版を上げるときは壊れることがある
+shared-memory = ["zenoh/shared-memory", "zenoh/unstable"]
+
+[dependencies]
+# C ABI のブローカーは juiz_sdk のグルーだけで作る。juiz_core には依存しない (broker-plugin-abi.md §2 の 4)。
+# juiz の rev はテストが使う juiz_core・juiz_broker_suite と同じにする (同じ juiz_sdk を 1 つだけ使うため)。
+# rev を変えるときは juiz-rev.txt も変える (CI はその rev の juiz をビルドしてテストの相手にする)
+juiz_sdk = { git = "https://github.com/OpenJUIZ/juiz", rev = "e905ab53e5fb7e97d05206a65fa4d1cfafceff80" }
+serde_json = "1"
+# TCP だけ。ほかの transport は入れない (zenoh-broker.md §2)。共有メモリは feature shared-memory
+zenoh = { version = "1.10.2", default-features = false, features = ["transport_tcp"] }
+
+[target.'cfg(unix)'.dependencies]
+# 共有メモリの pool を mlock できるか (RLIMIT_MEMLOCK) を調べる (zenoh-broker.md §11.3)
+libc = "0.2"
+
+[dev-dependencies]
+# テストだけ。プラグイン自身は juiz_core を使わない
+juiz_core = { git = "https://github.com/OpenJUIZ/juiz", rev = "e905ab53e5fb7e97d05206a65fa4d1cfafceff80" }
+# どのブローカーでも成り立つ確認 (juiz の brokers/broker_suite、crates.io には無い)。
+# 例のプラグインと juiz コマンドの置き場所は環境変数 JUIZ_BROKER_SUITE_TARGET_DIR で渡す (scripts/test.sh)
+juiz_broker_suite = { git = "https://github.com/OpenJUIZ/juiz", rev = "e905ab53e5fb7e97d05206a65fa4d1cfafceff80" }
+uuid = { version = "1", features = ["v4"] }
+# HTTP で受けた要求を zenoh の副系へ転送するテスト (tests/broker/error_handling.rs)
+reqwest = { version = "0.12.8", default-features = false, features = ["blocking", "json", "rustls-tls-native-roots"] }
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.release]
+# 配るライブラリは小さくする
+strip = "debuginfo"
